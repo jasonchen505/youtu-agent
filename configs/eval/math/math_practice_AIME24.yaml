@@ -3,7 +3,7 @@ defaults:
   - /agents/practice/math_practice_agent@agent
   - _self_
 
-exp_id: "math_practice_AIME24_eval"
+exp_id: "math_practice_AIME24_eval_1"
 
 data:
   dataset: "AIME24"

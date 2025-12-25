@@ -18,7 +18,7 @@ agent:
     \\boxed{{'The final answer goes here.'}}
     </answer>
 
-max_turns: 50
+max_turns: 3
 
 model:
   model_settings:

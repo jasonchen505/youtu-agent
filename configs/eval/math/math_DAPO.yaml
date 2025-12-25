@@ -1,15 +1,15 @@
 # @package _global_
 defaults:
-  - /agents/practice/math_practical_agent_our_version@agent
+  - /agents/practice/math_agent@agent
   - _self_
 
-exp_id: "math_AIME24_eval_5"
+exp_id: "math_DAPO_eval_1"
 
 data:
-  dataset: "AIME24"
+  dataset: "DAPO-Math-17k"
 
 concurrency: 1
-pass_k: 1
+pass_k: 5
 
 verify_filename: "math.py"
 verify_func_name: "verify_func"

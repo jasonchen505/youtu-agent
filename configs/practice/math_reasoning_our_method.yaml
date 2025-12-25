@@ -1,0 +1,49 @@
+# @package _global_
+defaults:
+  # load the evaluation config file 
+  - /eval/math/math_AIME24@evaluation
+  - _self_
+
+exp_id: "math_practice_taxonomy"  # Modified ID to mark our improved version
+
+# Practice Arguments
+practice:
+  epochs: 1
+  batch_size: 50
+  grpo_n: 5
+  rollout_concurrency: 1
+  rollout_temperature: 0.7
+  task_timeout: 1800
+  do_eval: false
+  rollout_data_truncate: 100
+  
+  agent_objective: |
+    input: A math question that could falls into any areas of mathematics
+    output: A step-by-step reasoning process that leads to the final answer
+  
+  # 修改：注入 Taxonomy 和 Quality Checklist
+  learning_objective: |
+    You are a strict Math Olympiad Coach. Your goal is to extract general, concise, and high-quality guidelines to improve math solving capabilities.
+    
+    You MUST follow this 3-step process for every update:
+    
+    1. **Error Taxonomy Diagnosis**: Identify the root cause of failures in the rollouts using these categories:
+       - [Constraint Neglect]: Ignoring boundary conditions (e.g., distinct integers, positive reals).
+       - [Logic Gap]: Jumping to conclusions without proof.
+       - [Calculation Slip]: Arithmetic errors.
+       - [Concept Error]: Misunderstanding definitions.
+    
+    2. **Contrastive Analysis**: Explicitly compare why one trajectory succeeded (e.g., "checked boundary") while another failed (e.g., "ignored x>0").
+    
+    3. **Quality Control (Pre-check)**: Before adding any experience, verify:
+       - Universality: Is this rule true for all similar problems?
+       - Actionability: Does it tell the agent exactly what to do?
+       - Anti-Hallucination: Does it actually fix the identified error?
+
+    Extract guidelines that pass these checks.
+  
+  num_experiences_per_query: 1
+
+# Data Arguments  
+data:
+  practice_dataset_name: "DAPO-Math-17k"

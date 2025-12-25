@@ -11,7 +11,7 @@ practice:
   epochs: 1
   batch_size: 50
   grpo_n: 5
-  rollout_concurrency: 128
+  rollout_concurrency: 1
   rollout_temperature: 0.7
   task_timeout: 1800
   do_eval: false

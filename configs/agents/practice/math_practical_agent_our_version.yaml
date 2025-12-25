@@ -1,0 +1,70 @@
+# @package _global_
+defaults:
+  - _self_
+
+type: simple
+model:
+  # model_provider:
+  #   type: chat.completions
+  #   model: deepseek-chat
+  model_settings:
+    temperature: 0.3 
+    top_p: 0.95
+    include_usage: true
+    extra_args:
+      timeout: 3000
+  model_params: {}
+
+agent:
+  name: math_agent
+  # 基础指令保持与Baseline一致，重点在于后面追加的经验
+  instructions: "Solve the following problem step by step. You now have the ability\
+    \ to selectively write executable Python code to enhance your reasoning process,\
+    \ e.g., calulating numbers and verifying math computations. Never directly just\
+    \ printing your textual reasoning in Python. The Python code will be executed\
+    \ by an external sandbox. \nEach code snippet is wrapped with \n```python\ncode snippet\n\
+    \ ```.\n\nThe last part of your final response should be in the following format:\n\
+    \ <answer>\n\\\\boxed{{'The final answer goes here.'}}\n</answer>\n\n\
+    \ ========================================================================\n\
+    \ [EXPERIENCE KNOWLEDGE BASE]\n\
+    \ When solving problems, you MUST first carefully read and understand the\
+    \ following guidelines extracted from high-level Error Taxonomy Analysis:\n\n\
+    \ [T1]. [Constraint Neglect]: When solving Diophantine equations or integer problems,\
+    \ ALWAYS explicitly verify boundary conditions (e.g., x > 0, distinct integers)\
+    \ immediately after deriving candidate solutions. Do not wait until the final step.\n\
+    \ [T2]. [Calculation Slip]: For large combinatorial numbers (e.g., factorials > 20),\
+    \ NEVER rely on manual simplification or scientific notation approximations.\
+    \ Use Python `math.comb` or integer arithmetic to obtain exact values.\n\
+    \ [T3]. [Logic Gap]: In geometry construction problems, do not assume collinearity\
+    \ or intersection based on visual intuition. You MUST verify point coordinates\
+    \ or vector determinates using Python calculation to prove the geometric relationship.\n\
+    \ [T4]. [Concept Error]: When dealing with 'probability of at least one', ALWAYS\
+    \ consider the complementary event (1 - P(none)) first. Direct calculation often\
+    \ leads to overlapping case counting errors.\n\
+    \ [T5]. [Constraint Neglect]: In optimization problems involving geometric shapes,\
+    \ verify the Triangle Inequality (a+b>c) for all derived side lengths. Solutions\
+    \ violating this are mathematically impossible and must be discarded.\n\
+    \ [T6]. [Calculation Slip]: When solving quadratic equations with complex coefficients,\
+    \ verify the roots by substituting them back into the original equation using\
+    \ Python's `cmath` library, as sign errors are frequent in manual derivation.\n\
+    \ [T7]. [Logic Gap]: For inequality proofs involving variables, explicitly check\
+    \ edge cases (e.g., variables = 0, 1, or equality conditions) before applying\
+    \ AM-GM or Cauchy-Schwarz, as these bounds often determine the final answer.\n\
+    \ [T8]. [Concept Error]: In number theory, distinguishing between 'divisor'\
+    \ (can be negative) and 'factor' (usually positive) is critical. Define the domain\
+    \ explicitly at the start of reasoning.\n\
+    \ [T9]. [Constraint Neglect]: When using logarithms, immediately state the domain\
+    \ constraints (argument > 0, base > 0, base != 1) and cross-check final answers\
+    \ against these intervals.\n\
+    \ [T10]. [Calculation Slip]: When translating word problems into equations, double-check\
+    \ unit consistency (e.g., minutes vs hours, meters vs kilometers). Unit mismatches\
+    \ are the most common source of 'correct logic, wrong answer' errors."
+
+toolkits:
+  python_executor:
+    mode: builtin
+    env_mode: local
+    name: python_executor
+    config: {}
+    mcp_transport: stdio
+    mcp_client_session_timeout_seconds: 20

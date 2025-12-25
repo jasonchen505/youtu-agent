@@ -152,7 +152,8 @@ def load_data(name: str, save_type: Literal["db", "file"] = "db") -> list[Datase
 
 
 if __name__ == "__main__":
-    dataset_names = ["AIME24", "AIME25", "DAPO-Math-17k", "AFM_web_RL", "WebWalkerQA"]
+    # dataset_names = ["AIME24", "AIME25", "DAPO-Math-17k", "AFM_web_RL", "WebWalkerQA"]
+    dataset_names = ["DAPO-Math-17k"]
     for name in dataset_names:
-        data = load_data(name)
+        data = load_data(name, save_type="file")
         print(f"Loaded {len(data)} records for dataset {name}")

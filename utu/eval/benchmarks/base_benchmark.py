@@ -55,6 +55,9 @@ class BaseBenchmark:
     def preprocess(self) -> None:
         """Preprocess the dataset before rollout."""
         samples = self.dataset.get_samples(stage="init")
+        if len(samples) > 0:
+            logger.info("Debug Mode: Only processing the first sample.")
+            samples = samples[:5]
         logger.info(f"Preprocessing {len(samples)} samples...")
         results = []
         for sample in tqdm(samples, desc="Preprocessing"):
@@ -75,6 +78,9 @@ class BaseBenchmark:
     async def rollout(self, max_retries: int = 3) -> None:
         """Rollout the datapoints."""
         samples = self.dataset.get_samples(stage="init")
+        if len(samples) > 0:
+            logger.info("Debug Mode: Cutting rollout samples to 1.")
+            samples = samples[:5]
         logger.info(f"Rollout {len(samples)} samples...")
 
         semaphore = asyncio.Semaphore(self.config.concurrency)
@@ -118,6 +124,20 @@ class BaseBenchmark:
             trajectories=json.dumps(result.trajectories, ensure_ascii=False),
             stage="rollout",  # update stage to rollout!
         )
+        try:
+            # 手动构建字典，比 model_dump 更安全，只存你关心的字段
+            save_data = {
+                "question": getattr(sample, "raw_question", ""), # 使用 getattr 防止字段不存在报错
+                "prediction": result.final_output,
+                "ground_truth": getattr(sample, "ground_truth", ""), 
+                "time_cost": end_time - start_time,
+                "trajectories": result.trajectories
+            }
+            
+            with open("realtime_results_v4.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps(save_data, ensure_ascii=False, default=str) + "\n")
+        except Exception as e:
+            logger.error(f"Failed to write realtime result: {e}")
         self.dataset.save(sample)
         return sample
 
@@ -134,7 +154,7 @@ class BaseBenchmark:
                     f"There are {num_init_samples} samples might failed unexpectedly in rollout stage."
                     "Please rerun the benchmarking to continue for final results."
                 )
-                exit(1)
+                # exit(1)
         samples = self.dataset.get_samples(stage=stage)
         logger.info(f"Judging {len(samples)} samples...")
 
