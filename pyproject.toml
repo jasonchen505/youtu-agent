@@ -2,9 +2,7 @@
 name = "youtu-agent"
 version = "0.1.3"
 description = "Youtu-Agent is a simple but powerful framework for building, running, and evaluating agents."
-authors = [
-    {name = "easonsshi", email = "easonsshi@tencent.com"}
-]
+authors = [{ name = "easonsshi", email = "easonsshi@tencent.com" }]
 license = "MIT"
 keywords = ["agent", "ai", "llm", "automation"]
 classifiers = [
@@ -22,13 +20,15 @@ dependencies = [
     "hydra-core>=1.3.2",
     "jinja2>=3.1.6",
     "mcp>=1.12.3",
-    # https://github.com/openai/openai-agents-python/issues/1395 | openai==1.97.1 & openai-agents==0.2.5
-    "openai-agents==0.5.0",
+    "openai-agents==0.10.4",
     # https://github.com/Arize-ai/openinference/tree/main/python/instrumentation/openinference-instrumentation-openai
-    "openinference-instrumentation-openai>=0.1.30",
+    "openinference-instrumentation-openai>=0.1.41",
+    # https://github.com/Arize-ai/openinference/tree/main/python/instrumentation/openinference-instrumentation-openai-agents
+    "openinference-instrumentation-openai-agents>=1.4.0",
     # https://opentelemetry.io/docs/languages/python/
     "opentelemetry-exporter-otlp>=1.37.0",
     "prompt-toolkit>=3.0.52",
+    "python-frontmatter>=1.1.0",
     "psycopg2-binary>=2.9.10",
     "requests>=2.32.4",
     "rich>=14.1.0",
@@ -41,22 +41,11 @@ Documentation = "https://tencentcloudadp.github.io/youtu-agent/"
 Repository = "https://github.com/TencentCloudADP/youtu-agent"
 
 [project.optional-dependencies]
-litllm = [
-    "litellm>=1.77.0",
-]
-search = [
-    "crawl4ai>=0.7.4",
-]
-scholar = [
-    "arxiv>=2.3.0",
-]
-wiki = [
-    "wikipedia-api>=0.8.1",
-]
-e2b = [
-    "e2b>=2.5.0",
-    "e2b-code-interpreter>=2.2.1",
-]
+litllm = ["litellm>=1.77.0"]
+search = ["crawl4ai>=0.7.4"]
+scholar = ["arxiv>=2.3.0"]
+wiki = ["wikipedia-api>=0.8.1"]
+e2b = ["e2b>=2.5.0", "e2b-code-interpreter>=2.2.1"]
 local-python = [
     "chardet>=5.2.0",
     "ipython>=8.37.0",
@@ -64,24 +53,23 @@ local-python = [
     "scipy>=1.15.3",
     "seaborn>=0.13.2",
 ]
-local-bash = [
-    "pexpect>=4.9.0",
-]
+local-bash = ["pexpect>=4.9.0"]
 documents = [
     "chunkr-ai>=0.3.7",
     "openpyxl>=3.1.5",
     "pymupdf>=1.26.4",
+    "python-magic>=0.4.27",
     "python-pptx>=1.0.2",
+    "unstructured[all-docs]>=0.18.14",
 ]
-image = [
-    "pillow>=11.3.0",
-]
-video = [
-    "google-genai>=1.38.0",
-]
-utils = [
-    "docker>=7.1.0",
-    "tiktoken>=0.11.0",
+image = ["pillow>=11.3.0"]
+video = ["google-genai>=1.38.0"]
+utils = ["docker>=7.1.0", "tiktoken>=0.11.0"]
+swerex = [
+    # AGS-patched fork of swe-rex (adds swerex.deployment.ags + swerex.runtime.ags)
+    "swe-rex @ git+https://github.com/csjgg/ags-cookbook.git@feat/sweagent#subdirectory=examples/swe-agent/SWE-ReX",
+    "tencentcloud-sdk-python-ags",
+    "tencentcloud-sdk-python-common",
 ]
 # PPT generation example dependencies
 ppt-gen = [
@@ -90,7 +78,6 @@ ppt-gen = [
     "pymupdf>=1.26.4",
     "matplotlib>=3.10.6",
 ]
-
 
 
 [dependency-groups]
@@ -125,15 +112,15 @@ gaia = [
     "xls2xlsx>=0.2.0",
     "xmltodict>=0.15.0",
 ]
-rl = [
-    "aiolimiter>=1.2.1",
-    "tencentcloud-sdk-python>=3.0.1474",
-]
+rl = ["aiolimiter>=1.2.1", "tencentcloud-sdk-python>=3.0.1474"]
 
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["utu"]
@@ -151,9 +138,7 @@ log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
-addopts = [
-    "-v", "-s",
-]
+addopts = ["-v", "-s"]
 
 [tool.uv]
 index-url = "https://pypi.org/simple"
@@ -163,13 +148,8 @@ index-url = "https://pypi.org/simple"
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
-exclude = [
-    "**/*.pyi",
-    ".*",
-    "configs/",
-    "utu/patch/runner.py"
-]
+target-version = "py310"
+exclude = ["**/*.pyi", ".*", "_*.py", "configs/", "utu/patch/runner.py"]
 
 [tool.ruff.lint]
 select = [

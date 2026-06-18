@@ -65,7 +65,7 @@ def main():
     parser.add_argument(
         "--data_format",
         type=str,
-        default="llamafactory",
+        default="default",
         choices=["default", "llamafactory"],
         help="The format of the input data. Supported formats: 'default', 'llamafactory'.",
     )

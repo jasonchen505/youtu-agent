@@ -1,8 +1,3 @@
-"""
-tione env: https://iwiki.woa.com/p/4015475657
-cecret key: https://cloud.tencent.com/document/product/1278/85305
-"""
-
 import asyncio
 import os
 from typing import TYPE_CHECKING, Literal

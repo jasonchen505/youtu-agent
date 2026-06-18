@@ -112,6 +112,7 @@ nav:
   - Howto:
     - Evaluate an Agent: howto/eval.md
     - Customize an YAML Config: howto/config.md
+    - Use agent skills: howto/skills.md
   - Documentation:
     - Config: config.md
     - Environment Variables: environment_variables.md

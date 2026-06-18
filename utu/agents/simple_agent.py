@@ -11,7 +11,6 @@ from agents import (
     ModelSettings,
     RunConfig,
     RunHooks,
-    Runner,
     StopAtTools,
     TContext,
     Tool,
@@ -23,11 +22,12 @@ from agents.mcp import MCPServer
 from ..config import AgentConfig, ConfigLoader, ToolkitConfig
 from ..context import BaseContextManager, build_context_manager
 from ..db import DBService, TrajectoryModel
-from ..env import BaseEnv, E2BEnv, get_env
+from ..env import _BaseEnv, get_env
 from ..hooks import get_run_hooks
+from ..runner import get_runner
+from ..runner.filters import utu_input_filter
 from ..tools import TOOLKIT_MAP, AsyncBaseToolkit
-from ..tools.utils import AgentsMCPUtils
-from ..utils import AgentsUtils, get_logger, load_class_from_file
+from ..utils import AgentsMCPUtils, AgentsUtils, get_logger, load_class_from_file
 from .common import QueueCompleteSentinel, TaskRecorder
 
 logger = get_logger(__name__)
@@ -64,7 +64,7 @@ class SimpleAgent:
         self.output_type: type[Any] | AgentOutputSchemaBase | None = output_type
         self.tool_use_behavior: Literal["run_llm_again", "stop_on_first_tool"] | StopAtTools = tool_use_behavior
         self.context_manager: BaseContextManager = None
-        self.env: BaseEnv = None
+        self.env: _BaseEnv = None
         self.workspace_dir: str = ""
         self.current_agent: Agent[TContext] = None  # move to task recorder?
         self.input_items: list[TResponseInputItem] = []
@@ -107,12 +107,13 @@ class SimpleAgent:
             return
         self.env = await get_env(self.config, trace_id or AgentsUtils.gen_trace_id())  # Pass trace_id
         await self.env.build()
+        tools = await self.get_tools(self.env)
         self.current_agent = Agent(
             name=self.config.agent.name,
             instructions=self.config.agent.instructions,
             model=self.model,
             model_settings=self.model_settings,
-            tools=await self.get_tools(),
+            tools=tools,
             output_type=self.output_type,
             tool_use_behavior=self.tool_use_behavior,
             mcp_servers=self._mcp_servers,
@@ -125,7 +126,9 @@ class SimpleAgent:
         logger.info("Cleaning up MCP servers...")
         await self._mcps_exit_stack.aclose()
         self._mcp_servers = []
-        logger.info("Cleaning up tools...")
+        logger.info("Cleaning up toolkits...")
+        for toolkit in self._toolkits.values():
+            await toolkit.cleanup()
         self._toolkits = {}
         logger.info("Cleaning up env...")
         await self.env.cleanup()
@@ -142,18 +145,18 @@ class SimpleAgent:
             if hasattr(toolkit, "setup_workspace"):
                 toolkit.setup_workspace(self.workspace_dir)
 
-    async def get_tools(self) -> list[Tool]:
+    async def get_tools(self, env: _BaseEnv = None) -> list[Tool]:
         if self.tools:
             return self.tools
 
         if self.toolkits:
-            await self._load_toolkits_config()
+            await self._load_toolkits_config(env)
         else:
             tools_list: list[Tool] = []
-            tools_list += await self.env.get_tools()  # add env tools
+            tools_list += await env.get_tools()  # add env tools
             # TODO: handle duplicate tool names
             for _, toolkit_config in self.config.toolkits.items():
-                toolkit = await self._load_toolkit(toolkit_config)
+                toolkit = await self._load_toolkit(toolkit_config, env)
                 if toolkit_config.mode in ["customized", "builtin"]:
                     tools_list.extend(toolkit.get_tools_in_agents())
             tool_names = [tool.name for tool in tools_list]
@@ -164,43 +167,42 @@ class SimpleAgent:
             self._setup_workspace_for_toolkits()
         return self.tools
 
-    async def _load_toolkits_config(self):
+    async def _load_toolkits_config(self, env: _BaseEnv = None):
         assert isinstance(self.toolkits, list) and all(isinstance(tool, str) for tool in self.toolkits)
         parsed_tools = []
         for tool_name in self.toolkits:
             config = ConfigLoader.load_toolkit_config(tool_name)
-            toolkit = await self._load_toolkit(config)
+            toolkit = await self._load_toolkit(config, env)
             if config.mode in ["customized", "builtin"]:
                 parsed_tools.extend(toolkit.get_tools_in_agents())
         self.tools = parsed_tools
 
-    async def _load_toolkit(self, toolkit_config: ToolkitConfig) -> AsyncBaseToolkit | MCPServer:
+    async def _load_toolkit(self, toolkit_config: ToolkitConfig, env: _BaseEnv = None) -> AsyncBaseToolkit | MCPServer:
         if toolkit_config.mode == "builtin":
-            toolkit = await self._load_builtin_toolkit(toolkit_config)
+            toolkit = await self._load_builtin_toolkit(toolkit_config, env)
         elif toolkit_config.mode == "customized":
-            toolkit = await self._load_customized_toolkit(toolkit_config)
+            toolkit = await self._load_customized_toolkit(toolkit_config, env)
         elif toolkit_config.mode == "mcp":
             toolkit = await self._load_mcp_server(toolkit_config)
         else:
             raise ValueError(f"Unknown toolkit mode: {toolkit_config.mode}")
-
-        if toolkit_config.env_mode == "e2b":
-            # setup e2b sandbox for toolkits that need it
-            assert isinstance(self.env, E2BEnv), "E2B env is required for e2b toolkit!"
-            toolkit.setup_e2b_env(self.env)
         return toolkit
 
-    async def _load_builtin_toolkit(self, toolkit_config: ToolkitConfig) -> AsyncBaseToolkit:
+    async def _load_builtin_toolkit(self, toolkit_config: ToolkitConfig, env: _BaseEnv = None) -> AsyncBaseToolkit:
         logger.info(f"Loading builtin toolkit `{toolkit_config.name}` with config {toolkit_config}")
         toolkit = TOOLKIT_MAP[toolkit_config.name](toolkit_config)
+        toolkit.setup_env(env)
+        await toolkit.build()
         self._toolkits[toolkit_config.name] = toolkit
         return toolkit
 
-    async def _load_customized_toolkit(self, toolkit_config: ToolkitConfig) -> AsyncBaseToolkit:
+    async def _load_customized_toolkit(self, toolkit_config: ToolkitConfig, env: _BaseEnv = None) -> AsyncBaseToolkit:
         logger.info(f"Loading customized toolkit `{toolkit_config.name}` with config {toolkit_config}")
         assert toolkit_config.customized_filepath is not None and toolkit_config.customized_classname is not None
         toolkit_class = load_class_from_file(toolkit_config.customized_filepath, toolkit_config.customized_classname)
         toolkit = toolkit_class(toolkit_config)
+        toolkit.setup_env(env)
+        await toolkit.build()
         self._toolkits[toolkit_config.name] = toolkit
         return toolkit
 
@@ -216,6 +218,7 @@ class SimpleAgent:
             model=self.current_agent.model,
             model_settings=self.config.model.model_settings,
             workflow_name=self.config.agent.name,
+            call_model_input_filter=utu_input_filter,
         )
         return run_config
 
@@ -224,6 +227,7 @@ class SimpleAgent:
             "context_manager": self.context_manager,
             "env": self.env,
             "agent_config": self.config,
+            "max_turns": self.config.max_turns,
         }
 
     def _prepare_run_kwargs(self, input: str | list[TResponseInputItem]) -> dict:
@@ -263,11 +267,12 @@ class SimpleAgent:
         if isinstance(input, str):  # only add history when input is str?
             input = self.input_items + [{"content": input, "role": "user"}]
         run_kwargs = self._prepare_run_kwargs(input)
+        runner = get_runner(self.config.runner)
         if AgentsUtils.get_current_trace():
-            run_result = await Runner.run(**run_kwargs)
+            run_result = await runner.run(**run_kwargs)
         else:
             with trace(workflow_name="simple_agent", trace_id=recorder.trace_id):
-                run_result = await Runner.run(**run_kwargs)
+                run_result = await runner.run(**run_kwargs)
         # save final output and trajectory
         recorder.add_run_result(run_result)
         if save:
@@ -307,11 +312,12 @@ class SimpleAgent:
             if isinstance(input, str):  # only add history when input is str?
                 input = self.input_items + [{"content": input, "role": "user"}]
             run_kwargs = self._prepare_run_kwargs(input)
+            runner = get_runner(self.config.runner)
             if AgentsUtils.get_current_trace():
-                run_streamed_result = Runner.run_streamed(**run_kwargs)
+                run_streamed_result = runner.run_streamed(**run_kwargs)
             else:
                 with trace(workflow_name="simple_agent", trace_id=recorder.trace_id):
-                    run_streamed_result = Runner.run_streamed(**run_kwargs)
+                    run_streamed_result = runner.run_streamed(**run_kwargs)
             async for event in run_streamed_result.stream_events():
                 recorder._event_queue.put_nowait(event)
             # save final output and trajectory

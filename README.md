@@ -1,11 +1,11 @@
-# <img src="docs/assets/logo.svg" alt="Youtu-agent Logo" height="24px"> Youtu-Agent: A simple yet powerful agent framework that delivers with open-source models
+# <img src="docs/assets/logo.svg" alt="Youtu-agent Logo" height="24px"> Youtu-Agent: Scaling Agent Productivity with Automated Generation and Hybrid Policy Optimization
 
 <div align="center">
 <a href="https://tencentcloudadp.github.io/youtu-agent/"><img src=https://img.shields.io/badge/📖-Documentation-blue.svg></a>
-<!-- <a href=https://arxiv.org/abs/2502.14345><img src=https://img.shields.io/badge/arXiv-2502.14345-b31b1b.svg></a> -->
 <a href=https://github.com/TencentCloudADP/youtu-agent><img src=https://img.shields.io/badge/GitHub-Tencent-blue.svg></a>
 <a href=https://deepwiki.com/TencentCloudADP/youtu-agent><img src=https://img.shields.io/badge/DeepWiki-Tencent-blue.svg></a>
-<a href=https://arxiv.org/abs/2510.08191><img src=https://img.shields.io/badge/arXiv-2510.08191-b31b1b.svg></a>
+<a href=https://arxiv.org/abs/2512.24615><img src=https://img.shields.io/badge/arXiv-2512.24615-b31b1b.svg></a>
+<a href="https://huggingface.co/collections/yolay/youtu-agent-rl"><img src=https://img.shields.io/badge/🤗%20HuggingFace-Youtu%20Agent%20RL-ffc107.svg></a>
 </div>
 
 <p align="center">
@@ -25,16 +25,18 @@
 <img src="docs/assets/mascot.png" alt="Youtu-agent Logo" width="200" align="left" style="margin-right:20px;">
 
 Key highlights:
-- **Verified performance**: Achieved 71.47% on WebWalkerQA (pass@1) and 72.8% on GAIA (text-only subset, pass@1), using purely `DeepSeek-V3` series models (without Claude or GPT), establishing a strong open-source starting point.
-- **Automatic Tool and Agent Generation**: Built on modular design and structured configuration system, Youtu-Agent supports automatic generation of tools and agents through LLMs, enabling rapid adaptation to new application scenarios and reducing manual configuration overhead.
-- **Automatic Agent Experience Learning**: Through [Training-Free GRPO](https://arxiv.org/abs/2510.08191), agents can continuously optimize their capabilities using historical experiences, delivering significant performance improvements with minimal cost.
-- **Agent Training**: Youtu-Agent also supports parameter fine-tuning of agent models through end-to-end RL training to enhance model capabilities.
+- **Verified performance**: Achieves state-of-the-art performance on WebWalkerQA (71.47%) and GAIA (72.8%) using purely open-weight models (e.g., `DeepSeek-V3`), establishing a strong open-source baseline.
+- **Automated Agent Generation**: Introduces two paradigms: a **Workflow** mode for standard tasks and a **Meta-Agent** mode for complex requirements. The framework supports automated generation of tool code, prompts, and configurations, achieving over 81% tool synthesis success rate.
+- **Continuous Experience Learning**: The **Agent Practice** module enables low-cost continuous evolution via [Training-Free GRPO](https://arxiv.org/abs/2510.08191). Agents accumulate experience and improve performance (e.g., +5.4% on AIME 2025) through in-context optimization without parameter updates.
+- **Scalable and Stable Agent RL**: The **Agent RL** module provides a complete pipeline for end-to-end reinforcement learning. By integrating with distributed frameworks, it addresses stability and scalability challenges, achieving 40% training speedup and scaling to 128 GPUs.
 - **Open-source friendly & cost-aware**: Optimized for accessible, low-cost deployment without reliance on closed models.
-- **Practical use cases**: Out-of-the-box support for tasks like CSV analysis, literature review, personal file organization, and podcast and video generation (coming soon).
-- **Flexible architecture**: Built on [openai-agents](https://github.com/openai/openai-agents-python), with extensible support for diverse model APIs (form `DeepSeek` to `gpt-oss`), tool integrations, and framework implementations.
+- **Practical use cases**: Out-of-the-box support for tasks like data analysis, literature review, personal file organization, retrieval-augmented generation, and PPT generation.
+- **Flexible architecture**: Built on [openai-agents](https://github.com/openai/openai-agents-python), with extensible support for diverse model APIs (from `DeepSeek` to `gpt-oss`), tool integrations, and framework implementations.
 
 ## 🗞️ News
 
+- 🎉 [2026-01-17] **Agent Skills now supported!** Extend your agents with modular, domain-specific knowledge and workflows inspired by Anthropic's Claude Code skills. [[documentation](https://tencentcloudadp.github.io/youtu-agent/howto/skills/)].
+- 🚀 [2026-01-04] **Youtu Tip & Youtu-LLM Released!** We are excited to introduce [**Youtu-Tip**](https://youtu-tip.com/), an extension of Youtu-Agent that runs on macOS and is powered by offline models (via Ollama). It automates tasks like file reading and web browsing. In the future, you will be able to run your agent built with Youtu-Agent even more easily using Youtu-Tip. Also, try [**Youtu-LLM**](https://github.com/TencentCloudADP/youtu-tip/tree/master/youtu-llm) inside.
 - 🚀 [2025-12-10] **Youtu-Agent x Agent-Lightning training integration available!** We've collaborated with the [Agent-Lightning](https://github.com/microsoft/agent-lightning/) team to implement efficient model training in verious scenarios. With ours efforts, training can now seamlessly scale to multi-node deployment on 128 GPUs. See details in the [rl/agl branch](https://github.com/TencentCloudADP/youtu-agent/tree/rl/agl).
 - 🎉 [2025-11-12] **Training-Free GRPO now available in main branch!** The agent practice module powered by [Training-Free Group Relative Policy Optimization](https://arxiv.org/abs/2510.08191) is now integrated into the main branch. Enhance your agents' performance without fine-tuning at minimal cost (~$8 for RL runs). See our [Agent Practice Documentation](https://tencentcloudadp.github.io/youtu-agent/practice/) for usage and examples on math reasoning and web search tasks.
 - 📢 [2025-11-03] New examples: we add the [**PPT generation**](examples/ppt_gen/README.md) and [**RAG**](configs/agents/examples/rag.yaml) examples.
@@ -43,9 +45,11 @@ Key highlights:
 
 <details>
 <summary><b>📰 Previous announcements</b></summary>
+
 - 📺 [2025-09-09] We hosted a live sharing the design philosophy and basic usage of `Youtu-Agent`. [[video](https://www.bilibili.com/video/BV1mypqz4EvS)] [[documentation](https://doc.weixin.qq.com/doc/w3_AcMATAZtAPICNLgt3CbnxRWaYWnW4)].
 - 🎁 [2025-09-02] [Tencent Cloud International](https://www.tencentcloud.com/) offers new users of the DeepSeek API **3 million free tokens** (**Sep 1 – Oct 31, 2025**). [Try it out](https://www.tencentcloud.com/document/product/1255/70381) for free if you want to use DeepSeek models in `Youtu-Agent`! For enterprise agent solutions, also check out [Agent Development Platform](https://adp.tencentcloud.com) (ADP).
 - 📺 [2025-08-28] We hosted a live sharing updates about DeepSeek-V3.1 and how to use it in the `Youtu-Agent` framework. [[video](https://www.bilibili.com/video/BV1XwayzrETi/)] [[documentation](https://doc.weixin.qq.com/doc/w3_AcMATAZtAPICNvcLaY5FvTOuo7MwF)].
+
 </details>
 
 ## 🌟 Benchmark Performance
@@ -401,6 +405,15 @@ We welcome contributions from the community! If you'd like to help improve Youtu
 If you find this work useful, please consider citing:
 
 ```bibtex
+@misc{youtu_agent,
+      title={Youtu-Agent: Scaling Agent Productivity with Automated Generation and Hybrid Policy Optimization}, 
+      author={Yuchen Shi and Yuzheng Cai and Siqi Cai and Zihan Xu and Lichao Chen and Yulei Qin and Zhijian Zhou and Xiang Fei and Chaofan Qiu and Xiaoyu Tan and Gang Li and Zongyi Li and Haojia Lin and Guocan Cai and Yong Mao and Yunsheng Wu and Ke Li and Xing Sun},
+      year={2025},
+      eprint={2512.24615},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2512.24615}, 
+}
 @misc{training_free_grpo,
       title={Training-Free Group Relative Policy Optimization}, 
       author={Tencent Youtu Lab},
@@ -409,14 +422,5 @@ If you find this work useful, please consider citing:
       archivePrefix={arXiv},
       primaryClass={cs.CL},
       url={https://arxiv.org/abs/2510.08191}, 
-}
-
-@misc{youtu-agent-2025,
-  title={Youtu-agent: A Simple yet Powerful Agent Framework},
-  author={Tencent Youtu Lab},
-  year={2025},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/TencentCloudADP/youtu-agent}},
 }
 ```

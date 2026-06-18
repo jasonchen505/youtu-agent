@@ -19,8 +19,8 @@ from ..agents import SimpleAgent
 from ..agents.common import DataClassWithStreamEvents, QueueCompleteSentinel
 from ..config import ConfigLoader
 from ..tools import TOOLKIT_MAP, UserInteractionToolkit
-from ..tools.utils import AgentsMCPUtils, get_tools_schema
-from ..utils import DIR_ROOT, FileUtils, get_logger
+from ..tools.utils import get_tools_schema
+from ..utils import DIR_ROOT, AgentsMCPUtils, FileUtils, get_logger
 
 logger = get_logger(__name__)
 

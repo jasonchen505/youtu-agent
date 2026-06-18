@@ -1,4 +1,7 @@
+import asyncio
+
 from utu.config import ConfigLoader
+from utu.env import E2BEnv
 from utu.tools import PythonExecutorToolkit
 
 toolkit = PythonExecutorToolkit(ConfigLoader.load_toolkit_config("python_executor"))
@@ -35,3 +38,36 @@ print("Image generated")
     assert "Image generated" in result_plot["message"]
     assert len(result_plot["files"]) == 1
     assert "output_image.png" in result_plot["files"][0]
+
+
+async def test_ipython():
+    toolkit_config = ConfigLoader.load_toolkit_config("python_executor")
+    toolkit_config.env_mode = "local"
+    toolkit = PythonExecutorToolkit(toolkit_config)
+
+    _code = "import numpy as np\na = np.array([1, 2, 3])\na"
+    result = await toolkit.execute_python_code(code=_code)
+    print(result)
+    _code = "b = a + 1\nnp.sum(b)"
+    result = await toolkit.execute_python_code(code=_code)
+    print(result)
+
+
+async def test_ipython_e2b():
+    async with E2BEnv() as env:
+        toolkit_config = ConfigLoader.load_toolkit_config("python_executor")
+        toolkit_config.env_mode = "e2b"
+        toolkit = PythonExecutorToolkit(toolkit_config)
+        toolkit.setup_env(env)
+
+        _code = "import numpy as np\na = np.array([1, 2, 3])\na"
+        result = await toolkit.execute_python_code(code=_code)
+        print(result)
+        _code = "b = a + 1\nnp.sum(b)"
+        result = await toolkit.execute_python_code(code=_code)
+        print(result)
+
+
+if __name__ == "__main__":
+    asyncio.run(test_ipython())
+    # asyncio.run(test_ipython_e2b())

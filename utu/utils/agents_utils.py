@@ -40,11 +40,9 @@ logger = logging.getLogger(__name__)
 class ChatCompletionConverter(Converter):
     @classmethod
     def items_to_messages(cls, items: str | Iterable[TResponseInputItem]) -> list[ChatCompletionMessageParam]:
-        # skip reasoning, see chatcmpl_converter.Converter.items_to_messages()
-        # agents.exceptions.UserError: Unhandled item type or structure:
-        # {'id': '__fake_id__', 'summary': [{'text': '...', 'type': 'summary_text'}], 'type': 'reasoning'}
-        if not isinstance(items, str):  # TODO: check it!
-            items = cls.filter_items(items)
+        # The global patch in reasoning_chat_completions.py handles reasoning items:
+        # it strips them, runs the real converter, then injects reasoning fields into
+        # the correct assistant messages. So we pass items through WITHOUT filtering.
         return Converter.items_to_messages(items)
 
     @classmethod
@@ -136,7 +134,9 @@ class AgentsUtils:
             timeout=100,
         )
         if type == "chat.completions":
-            return OpenAIChatCompletionsModel(model=model, openai_client=openai_client)
+            from ..models.reasoning_chat_completions import ReasoningChatCompletionsModel
+
+            return ReasoningChatCompletionsModel(model=model, openai_client=openai_client)
         elif type == "responses":
             return OpenAIResponsesModel(model=model, openai_client=openai_client)
         else:

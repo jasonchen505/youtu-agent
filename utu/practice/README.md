@@ -75,7 +75,7 @@ This example script will download and upload the following built-in datasets to 
 - AIME25: AIME 2025 competition problems  
 - DAPO-Math-17k: 17k math problems from DAPO dataset
 - AFM_web_RL: Web agent reinforcement learning dataset
-- WebWalkerQA: Web navigation question-answering dataset
+- WebWalkerQA: Web navigation n-answering dataset
 
 **Important**: When uploading datasets, make sure that each `DatasetSample` includes the required fields: `dataset`, `source`, `question`, and `answer`, specifically, ensure to **set the `source` field as `"training_free_grpo"`** for proper data processing.
 
@@ -92,7 +92,7 @@ python scripts/data/upload_dataset.py \
 
 **Important**: Ensure your local data file contains samples with all required fields: `dataset`, `source`, `question`, and `answer`. Each sample should be a dictionary with the following structure:
 
-```python
+```json
 {
     "dataset": "YourDataset",       # Name of your dataset
     "source": "training_free_grpo", # Must be "training_free_grpo" for both practice and evaluation data

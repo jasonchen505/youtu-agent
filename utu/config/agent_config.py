@@ -1,10 +1,13 @@
+import logging
 from collections.abc import Callable
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from .base_config import ConfigBaseModel
 from .model_config import ModelConfigs
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_INSTRUCTIONS = "You are a helpful assistant."
 
@@ -64,12 +67,16 @@ class AgentConfig(ConfigBaseModel):
     """Context manager config"""
     env: EnvConfig = Field(default_factory=EnvConfig)
     """Env config"""
+    enabled_skills: list[str] = Field(default_factory=list)
+    """Enabled skills for this agent, only available when env=`shell_local` for now."""
     toolkits: dict[str, ToolkitConfig] = Field(default_factory=dict)
     """Toolkits config"""
     max_turns: int = 50
     """Max turns for simple agent. This param is derived from @openai-agents"""
     stop_at_tool_names: list[str] | None = None
     """Stop at tools for simple agent. This param is derived from @openai-agents"""
+    runner: Literal["openai", "react"] = "openai"
+    """Runner name for simple agent."""
 
     # orchestra agent config
     planner_model: ModelConfigs = Field(default_factory=ModelConfigs)
@@ -126,3 +133,27 @@ class AgentConfig(ConfigBaseModel):
     """Workers config"""
     orchestrator_workers_info: list[dict] = Field(default_factory=list)
     """Workers info, list of {name, description}"""
+
+    @model_validator(mode="after")
+    def validate_enabled_skills(self):
+        """Validate that enabled_skills is used with correct env and context_manager settings."""
+        if not self.enabled_skills:
+            return self
+
+        # Check env is shell_local
+        if not self.env or self.env.name != "shell_local":
+            logger.warning(
+                "enabled_skills requires env.name='shell_local'. "
+                f"Current env: {self.env.name if self.env else None}. "
+                "Skills may not work properly."
+            )
+
+        # Check context_manager is env
+        if not self.context_manager or self.context_manager.name != "env":
+            logger.warning(
+                "enabled_skills requires context_manager.name='env' for skill prompts to be injected. "
+                f"Current context_manager: {self.context_manager.name if self.context_manager else None}. "
+                "Skills may not work properly."
+            )
+
+        return self

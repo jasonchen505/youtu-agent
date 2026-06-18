@@ -43,12 +43,59 @@ except (ValueError, resource.error):
 """
 
 
-def execute_python_code_sync(code: str, workdir: str):
+def create_ipython_shell():
+    """
+    Create a persistent IPython shell instance for reuse across multiple executions.
+
+    Returns:
+        InteractiveShell: A configured IPython shell instance
+    """
+    InteractiveShell.clear_instance()
+
+    config = Config()
+    config.HistoryManager.enabled = False
+    config.HistoryManager.hist_file = ":memory:"
+
+    shell = InteractiveShell.instance(config=config)
+
+    if hasattr(shell, "history_manager"):
+        shell.history_manager.enabled = False
+
+    return shell
+
+
+def cleanup_ipython_shell(shell):
+    """
+    Clean up an IPython shell instance.
+
+    Args:
+        shell: The IPython shell instance to clean up
+    """
+    if shell is None:
+        return
+
+    try:
+        shell.atexit_operations = lambda: None
+        if hasattr(shell, "history_manager") and shell.history_manager:
+            shell.history_manager.enabled = False
+            shell.history_manager.end_session = lambda: None
+        InteractiveShell.clear_instance()
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+
+def execute_python_code_sync(code: str, workdir: str, shell=None):
     """
     Synchronous execution of Python code.
     This function is intended to be run in a separate thread.
+
+    Args:
+        code: Python code to execute
+        workdir: Working directory for execution
+        shell: Optional existing IPython shell instance to reuse
     """
     original_dir = os.getcwd()
+    shell_was_passed = shell is not None  # Track if shell was passed in
     try:
         # Clean up code format
         code_clean = code.strip()
@@ -63,14 +110,15 @@ def execute_python_code_sync(code: str, workdir: str):
         # Get file list before execution
         files_before = set(glob.glob("*"))
 
-        # Create a new IPython shell instance
-        InteractiveShell.clear_instance()
+        # Create a new IPython shell instance or reuse existing one
+        if shell is None:
+            InteractiveShell.clear_instance()
 
-        config = Config()
-        config.HistoryManager.enabled = False
-        config.HistoryManager.hist_file = ":memory:"
+            config = Config()
+            config.HistoryManager.enabled = False
+            config.HistoryManager.hist_file = ":memory:"
 
-        shell = InteractiveShell.instance(config=config)
+            shell = InteractiveShell.instance(config=config)
 
         if hasattr(shell, "history_manager"):
             shell.history_manager.enabled = False
@@ -106,14 +154,17 @@ def execute_python_code_sync(code: str, workdir: str):
         new_files = list(files_after - files_before)
         new_files = [os.path.join(workdir, f) for f in new_files]
 
-        try:
-            shell.atexit_operations = lambda: None
-            if hasattr(shell, "history_manager") and shell.history_manager:
-                shell.history_manager.enabled = False
-                shell.history_manager.end_session = lambda: None
-            InteractiveShell.clear_instance()
-        except Exception:  # pylint: disable=broad-except
-            pass
+        # Don't clear the shell instance if it was passed in (reuse mode)
+        # Only clear if we created a new one
+        if not shell_was_passed:
+            try:
+                shell.atexit_operations = lambda: None
+                if hasattr(shell, "history_manager") and shell.history_manager:
+                    shell.history_manager.enabled = False
+                    shell.history_manager.end_session = lambda: None
+                InteractiveShell.clear_instance()
+            except Exception:  # pylint: disable=broad-except
+                pass
 
         success = True
         if "Error" in stderr_result or ("Error" in stdout_result and "Traceback" in stdout_result):
@@ -143,7 +194,16 @@ def execute_python_code_sync(code: str, workdir: str):
         os.chdir(original_dir)
 
 
-async def execute_python_code_async(code: str, workdir: str, timeout: int = 30) -> dict:
+async def execute_python_code_async(code: str, workdir: str, timeout: int = 30, shell=None) -> dict:
+    """
+    Asynchronous execution of Python code.
+
+    Args:
+        code: Python code to execute
+        workdir: Working directory for execution
+        timeout: Execution timeout in seconds
+        shell: Optional existing IPython shell instance to reuse
+    """
     loop = asyncio.get_running_loop()
     try:
         return await asyncio.wait_for(
@@ -152,6 +212,7 @@ async def execute_python_code_async(code: str, workdir: str, timeout: int = 30) 
                 execute_python_code_sync,
                 code,
                 str(workdir),
+                shell,
             ),
             timeout=timeout,
         )

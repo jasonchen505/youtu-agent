@@ -9,6 +9,8 @@
 type: simple  # agent type, support `simple | orchestrator` for now
 max_turns: 50  # max number of turns
 
+runner: openai  # `openai | react` you can choose customized agent Runner
+
 # -------------------------------------------------------------------------------------------
 # model configs
 model:
